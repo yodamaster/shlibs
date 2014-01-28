@@ -7,10 +7,10 @@ import subprocess
 import re
 #import pdb
 
-LDD_STYLE1 = re.compile('^\t(.+?)\s\=\>\s(.+?)?\s\(0x.+?\)$')
-LDD_STYLE2 = re.compile('^\t(.+?)\s\(0x.+?\)$')
+LDD_STYLE1 = re.compile(r'^\t(.+?)\s\=\>\s(.+?)?\s\(0x.+?\)$')
+LDD_STYLE2 = re.compile(r'^\t(.+?)\s\(0x.+?\)$')
 
-def libraries_used(binary_path, loader_path = None):
+def libraries_used(binary_path, _):
     """
     Return a list of the paths of the shared libraries used by the object file
     (or executable) at the specified binary_path

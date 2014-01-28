@@ -32,41 +32,35 @@ def memoize(function):
 
     return FirstArgMemoize().__getitem__
 
-libraries_used = memoize(libraries_used)
 
-def all_libraries_used(binary_path):
+# some optimizations
+libraries_used = memoize(libraries_used)
+if 'rpath_entries' in locals():
+    rpath_entries = memoize(rpath_entries)
+
+
+def all_libraries_used(executable_path):
     """
     Return a list of the paths of the shared libraries used by the object file
-    (or executable) at the specified binary_path AND ALL SHARED LIBRARIES
+    (or executable) at the specified executable_path AND ALL SHARED LIBRARIES
     WHICH THEY USE
     """
     visited = dict()
 
-    def reentrant_resolve(path):
+    def reentrant_resolve(path, parent_deps=None):
         """ This sub-function is re-entered to perform the nested lookups """
         result = [path]
         visited[path] = True
-        dependencies = libraries_used(path, binary_path)
+
+        if parent_deps is None:
+            parent_deps = list()
+
+        dependencies = libraries_used(path, parent_deps)
         if dependencies is not None:
             for dep in dependencies:
                 if dep not in visited:
-                    result.extend(reentrant_resolve(dep))
+                    result.extend(reentrant_resolve(dep,
+                                                    parent_deps + [path,]))
         return result
 
-    return reentrant_resolve(binary_path)
-
-
-if __name__ == '__main__':
-    import argparse
-
-    ARGP = argparse.ArgumentParser(description=('Print the complete list of '
-        'shared libraries used by the specified binary file(s), including '
-        'child dependencies'))
-    ARGP.add_argument('file', nargs='+', help='file(s) to report on')
-    ARGS = ARGP.parse_args()
-
-    ALL_DEPS = reduce(lambda a, b: set(a)|set(b),
-                      [all_libraries_used(f) for f in ARGS.file])
-
-    for PATH in ALL_DEPS:
-        print PATH
+    return set(reentrant_resolve(executable_path))
